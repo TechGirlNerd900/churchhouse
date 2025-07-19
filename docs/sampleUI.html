@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChurchHouse UI Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom Tailwind Colors based on ChurchHouse Branding */
+        :root {
+            --color-primary: #8B4513; /* Saddle Brown */
+            --color-secondary: #D2691E; /* Chocolate */
+            --color-accent: #F4A460; /* Sandy Brown */
+            --color-background-light: #FFF8DC; /* Cornsilk */
+            --color-background-dark: #2F1B14; /* Dark Brown */
+            --color-text-primary: #3C2414; /* Dark Brown */
+            --color-text-secondary: #8B7355; /* Medium Brown */
+        }
+
+        .bg-primary { background-color: var(--color-primary); }
+        .bg-secondary { background-color: var(--color-secondary); }
+        .bg-accent { background-color: var(--color-accent); }
+        .bg-background-light { background-color: var(--color-background-light); }
+        .bg-background-dark { background-color: var(--color-background-dark); }
+        .text-primary-color { color: var(--color-text-primary); }
+        .text-secondary-color { color: var(--color-text-secondary); }
+        .border-primary { border-color: var(--color-primary); }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0; /* General page background */
+        }
+
+        .phone-frame {
+            width: 375px; /* iPhone X width */
+            height: 812px; /* iPhone X height */
+            border: 16px solid #333;
+            border-radius: 40px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            position: relative;
+            background-color: var(--color-background-light);
+        }
+
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 25px;
+            background-color: #333;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            z-index: 10;
+        }
+
+        .screen-content {
+            height: calc(100% - 64px); /* Account for bottom nav */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 20px; /* Padding for scrollable content */
+        }
+
+        .screen-content.hidden {
+            display: none;
+        }
+
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: var(--color-primary);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 20;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .nav-item.active {
+            color: var(--color-accent);
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* Specific screen styles */
+        .header {
+            padding: 16px;
+            background-color: var(--color-primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .header-light {
+            background-color: var(--color-background-light);
+            color: var(--color-text-primary);
+            border-bottom: 1px solid var(--color-text-secondary);
+        }
+
+        .post-card {
+            background-color: white;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--color-accent);
+        }
+
+        .live-indicator {
+            background-color: #ef4444; /* Red */
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .speaker-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--color-accent);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .moderator-star {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background-color: #34d399; /* Green */
+            border-radius: 50%;
+            padding: 4px;
+            font-size: 12px;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .action-button {
+            background-color: var(--color-secondary);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+        }
+
+        .fellowship-card {
+            background-color: white;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .bible-viewer {
+            padding: 20px;
+            background-color: white;
+            margin: 10px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .profile-header {
+            background-color: var(--color-primary);
+            padding: 20px;
+            color: white;
+            text-align: center;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--color-accent);
+            margin: 0 auto 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light">
+    <div class="phone-frame bg-background-light">
+        <div class="notch"></div>
+
+        <!-- Screens Container -->
+        <div id="screens" class="h-full">
+            <!-- Home Screen (Daily Scroll) -->
+            <div id="homeScreen" class="screen-content active">
+                <div class="header header-light text-primary-color">
+                    <i class="fas fa-search"></i>
+                    <span class="text-xl font-bold">Daily Scroll</span>
+                    <i class="fas fa-bell"></i>
+                </div>
+                <!-- Create Post Section with Gemini API Integration -->
+                <div class="p-4 bg-white m-2 rounded-xl shadow-md">
+                    <div class="flex items-center mb-3">
+                        <img src="https://placehold.co/40x40/F4A460/3C2414?text=ME" alt="Your Avatar" class="avatar mr-3">
+                        <textarea id="postInput" class="flex-1 p-2 border border-gray-300 rounded-lg text-primary-color placeholder-secondary-color focus:outline-none focus:ring-2 focus:ring-accent" rows="3" placeholder="Share a blessing or thought..."></textarea>
+                    </div>
+                    <div class="flex justify-between items-center mt-3">
+                        <button id="getVerseInspiration" class="action-button bg-accent text-primary-color text-sm px-3 py-2 rounded-lg">
+                            <i class="fas fa-lightbulb"></i> ✨ Get Verse Inspiration
+                        </button>
+                        <button class="action-button bg-primary text-white text-sm px-4 py-2 rounded-lg">
+                            Post <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div id="verseInspirationOutput" class="mt-4 p-3 bg-background-light border border-secondary-color rounded-lg text-primary-color text-sm italic hidden">
+                        <!-- Generated verse will appear here -->
+                        <div class="flex items-center justify-center">
+                            <i class="fas fa-spinner fa-spin mr-2 text-secondary-color"></i>
+                            <span class="text-secondary-color">Generating inspiration...</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Create Post Section -->
+
+                <div class="p-4">
+                    <div class="post-card mb-4">
+                        <div class="flex items-center mb-3">
+                            <img src="https://placehold.co/40x40/D2691E/FFF?text=P1" alt="User Avatar" class="avatar mr-3">
+                            <div>
+                                <p class="font-semibold text-primary-color">Brother Mark <span class="text-secondary-color text-xs ml-1">@mark_faith</span></p>
+                                <p class="text-xs text-secondary-color">5m ago</p>
+                            </div>
+                        </div>
+                        <p class="text-primary-color mb-3">"For where two or three gather in my name, there am I with them." - Matthew 18:20 🙏 #Community #Prayer</p>
+                        <img src="https://placehold.co/300x150/F4A460/FFF?text=Worship+Image" alt="Post Image" class="w-full h-auto rounded-lg mb-3">
+                        <div class="flex justify-around text-secondary-color text-sm">
+                            <span class="flex items-center"><i class="fas fa-hand-holding-heart mr-1"></i> 123 Amens</span>
+                            <span class="flex items-center"><i class="fas fa-comment mr-1"></i> 15 Comments</span>
+                            <span class="flex items-center"><i class="fas fa-share-alt mr-1"></i> 5 Shares</span>
+                        </div>
+                    </div>
+
+                    <div class="post-card mb-4">
+                        <div class="flex items-center mb-3">
+                            <img src="https://placehold.co/40x40/8B4513/FFF?text=S1" alt="User Avatar" class="avatar mr-3">
+                            <div>
+                                <p class="font-semibold text-primary-color">Sister Grace <span class="text-secondary-color text-xs ml-1">@grace_hope</span></p>
+                                <p class="text-xs text-secondary-color">1h ago</p>
+                            </div>
+                        </div>
+                        <p class="text-primary-color mb-3">Just finished a powerful Chapel on forgiveness. So much wisdom shared! Feeling blessed. ✨</p>
+                        <div class="flex justify-around text-secondary-color text-sm">
+                            <span class="flex items-center"><i class="fas fa-hand-holding-heart mr-1"></i> 89 Amens</span>
+                            <span class="flex items-center"><i class="fas fa-comment mr-1"></i> 8 Comments</span>
+                            <span class="flex items-center"><i class="fas fa-share-alt mr-1"></i> 2 Shares</span>
+                        </div>
+                    </div>
+
+                    <div class="post-card mb-4">
+                        <div class="flex items-center mb-3">
+                            <img src="https://placehold.co/40x40/D2691E/FFF?text=P2" alt="User Avatar" class="avatar mr-3">
+                            <div>
+                                <p class="font-semibold text-primary-color">Pastor John <span class="text-secondary-color text-xs ml-1">@pastor_john</span></p>
+                                <p class="text-xs text-secondary-color">3h ago</p>
+                            </div>
+                        </div>
+                        <p class="text-primary-color mb-3">Sharing a new devotional on "Strength in Weakness" from our Youth Ministry Fellowship. Link in bio! #Devotional #YouthMinistry</p>
+                        <img src="https://placehold.co/300x150/8B4513/FFF?text=Devotional+Cover" alt="Post Image" class="w-full h-auto rounded-lg mb-3">
+                        <div class="flex justify-around text-secondary-color text-sm">
+                            <span class="flex items-center"><i class="fas fa-hand-holding-heart mr-1"></i> 210 Amens</span>
+                            <span class="flex items-center"><i class="fas fa-comment mr-1"></i> 25 Comments</span>
+                            <span class="flex items-center"><i class="fas fa-share-alt mr-1"></i> 10 Shares</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chapel Screen (Live Audio Room) -->
+            <div id="chapelScreen" class="screen-content hidden bg-primary text-white">
+                <div class="header">
+                    <i class="fas fa-chevron-down"></i>
+                    <span class="text-lg">The Good Shepherd Chapel</span>
+                    <i class="fas fa-ellipsis-h"></i>
+                </div>
+                <div class="flex flex-col items-center justify-center h-full p-4">
+                    <p class="text-sm text-center mb-4 opacity-80">"Exploring Psalm 23: The Lord is my Shepherd"</p>
+
+                    <!-- Speakers on Stage -->
+                    <div class="flex flex-wrap justify-center gap-4 mb-8">
+                        <div class="relative flex flex-col items-center">
+                            <img src="https://placehold.co/60x60/F4A460/FFF?text=PJ" alt="Pastor John" class="speaker-avatar">
+                            <span class="absolute bottom-0 right-0 bg-accent rounded-full p-1 text-xs text-white">
+                                <i class="fas fa-star"></i>
+                            </span>
+                            <p class="text-xs mt-2 font-semibold">Pastor John</p>
+                            <p class="text-xs opacity-70">Host</p>
+                        </div>
+                        <div class="relative flex flex-col items-center">
+                            <img src="https://placehold.co/60x60/D2691E/FFF?text=SM" alt="Sister Mary" class="speaker-avatar">
+                            <p class="text-xs mt-2 font-semibold">Sister Mary</p>
+                            <p class="text-xs opacity-70">Speaker</p>
+                        </div>
+                        <div class="relative flex flex-col items-center">
+                            <img src="https://placehold.co/60x60/8B4513/FFF?text=BD" alt="Brother David" class="speaker-avatar">
+                            <p class="text-xs mt-2 font-semibold">Brother David</p>
+                            <p class="text-xs opacity-70">Speaker</p>
+                        </div>
+                    </div>
+
+                    <!-- Followed by Speakers -->
+                    <p class="text-xs mb-2 opacity-70">Followed by Speakers</p>
+                    <div class="flex flex-wrap justify-center gap-2 mb-8">
+                        <img src="https://placehold.co/40x40/FFF8DC/3C2414?text=U1" alt="User 1" class="avatar">
+                        <img src="https://placehold.co/40x40/FFF8DC/3C2414?text=U2" alt="User 2" class="avatar">
+                        <img src="https://placehold.co/40x40/FFF8DC/3C2414?text=U3" alt="User 3" class="avatar">
+                    </div>
+
+                    <!-- Others in the Room -->
+                    <p class="text-xs mb-2 opacity-70">Others in the Room (128)</p>
+                    <div class="flex flex-wrap justify-center gap-2 mb-8">
+                        <img src="https://placehold.co/30x30/FFF8DC/3C2414?text=L1" alt="Listener 1" class="rounded-full w-8 h-8 object-cover border border-white">
+                        <img src="https://placehold.co/30x30/FFF8DC/3C2414?text=L2" alt="Listener 2" class="rounded-full w-8 h-8 object-cover border border-white">
+                        <img src="https://placehold.co/30x30/FFF8DC/3C2414?text=L3" alt="Listener 3" class="rounded-full w-8 h-8 object-cover border border-white">
+                        <img src="https://placehold.co/30x30/FFF8DC/3C2414?text=L4" alt="Listener 4" class="rounded-full w-8 h-8 object-cover border border-white">
+                        <img src="https://placehold.co/30x30/FFF8DC/3C2414?text=L5" alt="Listener 5" class="rounded-full w-8 h-8 object-cover border border-white">
+                        <img src="https://placehold.co/30x30/FFF8DC/3C2414?text=L6" alt="Listener 6" class="rounded-full w-8 h-8 object-cover border border-white">
+                        <!-- More listeners... -->
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-around w-full px-4 mt-auto">
+                        <button class="action-button bg-accent">
+                            <i class="fas fa-hand-paper"></i> Raise Hand
+                        </button>
+                        <button class="action-button bg-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Amen & Exit
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fellowships Screen -->
+            <div id="fellowshipsScreen" class="screen-content hidden">
+                <div class="header header-light text-primary-color">
+                    <i class="fas fa-search"></i>
+                    <span class="text-xl font-bold">Fellowships</span>
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="p-4">
+                    <h2 class="text-lg font-semibold text-primary-color mb-4">My Fellowships</h2>
+                    <div class="fellowship-card mb-4">
+                        <div class="flex items-center mb-3">
+                            <img src="https://placehold.co/50x50/8B7355/FFF?text=YM" alt="Fellowship Icon" class="rounded-lg mr-3">
+                            <div>
+                                <p class="font-semibold text-primary-color">Youth Ministry Connect</p>
+                                <p class="text-sm text-secondary-color">500 Members</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-primary-color mb-3">Discussions, events, and prayer for young believers.</p>
+                        <button class="bg-primary text-white px-4 py-2 rounded-lg text-sm">View Fellowship</button>
+                    </div>
+
+                    <div class="fellowship-card mb-4">
+                        <div class="flex items-center mb-3">
+                            <img src="https://placehold.co/50x50/D2691E/FFF?text=WS" alt="Fellowship Icon" class="rounded-lg mr-3">
+                            <div>
+                                <p class="font-semibold text-primary-color">Women's Bible Study</p>
+                                <p class="text-sm text-secondary-color">230 Members</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-primary-color mb-3">Weekly deep dives into scripture and shared testimonies.</p>
+                        <button class="bg-primary text-white px-4 py-2 rounded-lg text-sm">View Fellowship</button>
+                    </div>
+
+                    <h2 class="text-lg font-semibold text-primary-color mt-6 mb-4">Discover Fellowships</h2>
+                    <div class="fellowship-card mb-4">
+                        <div class="flex items-center mb-3">
+                            <img src="https://placehold.co/50x50/F4A460/3C2414?text=AP" alt="Fellowship Icon" class="rounded-lg mr-3">
+                            <div>
+                                <p class="font-semibold text-primary-color">Apologetics & Theology</p>
+                                <p class="text-sm text-secondary-color">1.2K Members</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-primary-color mb-3">Engaging in thoughtful discussions about faith and reason.</p>
+                        <button class="bg-accent text-primary-color px-4 py-2 rounded-lg text-sm">Join Fellowship</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bible Screen -->
+            <div id="bibleScreen" class="screen-content hidden">
+                <div class="header header-light text-primary-color">
+                    <i class="fas fa-book-open"></i>
+                    <span class="text-xl font-bold">The Holy Text</span>
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="bible-viewer">
+                    <div class="flex justify-between items-center mb-4">
+                        <button class="text-secondary-color text-sm"><i class="fas fa-chevron-left mr-1"></i> Previous Chapter</button>
+                        <span class="font-bold text-lg text-primary-color">John 3:16</span>
+                        <button class="text-secondary-color text-sm">Next Chapter <i class="fas fa-chevron-right ml-1"></i></button>
+                    </div>
+                    <p class="text-primary-color text-base leading-relaxed">
+                        "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life."
+                    </p>
+                    <p class="text-sm text-secondary-color mt-4">
+                        <span class="font-semibold">Translation:</span> New International Version (NIV)
+                    </p>
+                    <div class="flex justify-around mt-6">
+                        <button class="text-accent text-sm"><i class="fas fa-highlighter mr-1"></i> Highlight</button>
+                        <button class="text-accent text-sm"><i class="fas fa-bookmark mr-1"></i> Bookmark</button>
+                        <button class="text-accent text-sm"><i class="fas fa-share-alt mr-1"></i> Share</button>
+                    </div>
+                </div>
+                <div class="bible-viewer mt-4">
+                    <h3 class="font-semibold text-primary-color mb-2">Daily Devotional: "Finding Peace in His Presence"</h3>
+                    <p class="text-primary-color text-sm">
+                        "Be still, and know that I am God; I will be exalted among the nations, I will be exalted in the earth." - Psalm 46:10
+                    </p>
+                    <p class="text-sm text-secondary-color mt-2">
+                        Today, let's reflect on the power of stillness in a chaotic world. God calls us to rest in Him...
+                    </p>
+                    <button class="bg-secondary text-white px-4 py-2 rounded-lg text-sm mt-4">Read Full Devotional</button>
+                </div>
+            </div>
+
+            <!-- Profile Screen -->
+            <div id="profileScreen" class="screen-content hidden">
+                <div class="profile-header">
+                    <img src="https://placehold.co/100x100/F4A460/3C2414?text=ME" alt="Profile Picture" class="profile-avatar">
+                    <h1 class="text-xl font-bold">Your Name Here</h1>
+                    <p class="text-sm opacity-80">@your_username</p>
+                    <div class="flex justify-center gap-4 mt-3 text-sm">
+                        <span><span class="font-bold">1.2K</span> Followers</span>
+                        <span><span class="font-bold">300</span> Following</span>
+                    </div>
+                    <p class="text-sm mt-3 opacity-90">
+                        "I can do all things through Christ who strengthens me." - Philippians 4:13 🙏
+                        <br>Passionate about youth ministry and community prayer.
+                    </p>
+                    <div class="flex justify-center gap-4 mt-4">
+                        <a href="#" class="text-white opacity-80 hover:opacity-100"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white opacity-80 hover:opacity-100"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white opacity-80 hover:opacity-100"><i class="fas fa-globe"></i></a>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h2 class="text-lg font-semibold text-primary-color mb-4">My Fellowships</h2>
+                    <div class="fellowship-card mb-4">
+                        <div class="flex items-center mb-3">
+                            <img src="https://placehold.co/50x50/8B7355/FFF?text=YM" alt="Fellowship Icon" class="rounded-lg mr-3">
+                            <div>
+                                <p class="font-semibold text-primary-color">Youth Ministry Connect</p>
+                                <p class="text-sm text-secondary-color">Elder</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-primary-color mb-3">Leading discussions and events for young believers.</p>
+                    </div>
+                    <button class="bg-secondary text-white px-4 py-2 rounded-lg w-full text-center font-semibold">Edit Profile</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item active" data-screen="homeScreen">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" data-screen="chapelScreen">
+                <i class="fas fa-microphone"></i>
+                <span>Chapels</span>
+            </div>
+            <div class="nav-item" data-screen="fellowshipsScreen">
+                <i class="fas fa-church"></i>
+                <span>Fellowships</span>
+            </div>
+            <div class="nav-item" data-screen="bibleScreen">
+                <i class="fas fa-book-bible"></i>
+                <span>Bible</span>
+            </div>
+            <div class="nav-item" data-screen="profileScreen">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const navItems = document.querySelectorAll('.nav-item');
+        const screens = document.querySelectorAll('.screen-content');
+        const getVerseInspirationButton = document.getElementById('getVerseInspiration');
+        const postInput = document.getElementById('postInput');
+        const verseInspirationOutput = document.getElementById('verseInspirationOutput');
+
+        // Function to show a specific screen
+        function showScreen(screenId) {
+            screens.forEach(screen => screen.classList.add('hidden')); // Hide all screens
+            document.getElementById(screenId).classList.remove('hidden'); // Show the target screen
+        }
+
+        // Initialize: show home screen and set active nav item
+        showScreen('homeScreen');
+        document.querySelector('.nav-item[data-screen="homeScreen"]').classList.add('active');
+
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Remove active class from all nav items
+                navItems.forEach(nav => nav.classList.remove('active'));
+                // Add active class to clicked nav item
+                item.classList.add('active');
+
+                // Show the corresponding screen
+                const targetScreenId = item.dataset.screen;
+                showScreen(targetScreenId);
+            });
+        });
+
+        // Gemini API Integration - Get Verse Inspiration
+        getVerseInspirationButton.addEventListener('click', async () => {
+            const prompt = `Provide a short, uplifting Bible verse that encourages faith and community. Just the verse text and reference, no extra commentary.`;
+
+            // Show loading indicator
+            verseInspirationOutput.classList.remove('hidden');
+            verseInspirationOutput.innerHTML = `
+                <div class="flex items-center justify-center">
+                    <i class="fas fa-spinner fa-spin mr-2 text-secondary-color"></i>
+                    <span class="text-secondary-color">Generating inspiration...</span>
+                </div>`;
+
+            try {
+                 //Simulate API call to Gemini (replace with actual fetch to Gemini API in a real app)
+                 //For a real integration, you'd use the provided fetch pattern:
+                
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // Canvas will provide
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                const result = await response.json();
+                let generatedText = "No verse found.";
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    generatedText = result.candidates[0].content.parts[0].text;
+                }
+                
+
+                // Simulated response for prototype:
+                const simulatedResponses = [
+                    "I can do all things through Christ who strengthens me. - Philippians 4:13",
+                    "For where two or three gather in my name, there am I with them. - Matthew 18:20",
+                    "The Lord is my strength and my shield; in him my heart trusts, and I am helped. - Psalm 28:7",
+                    "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go. - Joshua 1:9",
+                    "Trust in the Lord with all your heart and lean not on your own understanding. - Proverbs 3:5"
+                ];
+
+                // For prototype, use simulated response
+                const randomVerse = simulatedResponses[Math.floor(Math.random() * simulatedResponses.length)];
+                
+                // Display the verse
+                verseInspirationOutput.innerHTML = `
+                    <div class="flex items-start">
+                        <i class="fas fa-quote-left text-secondary-color mr-2 mt-1"></i>
+                        <span class="text-primary-color">${randomVerse}</span>
+                    </div>`;
+
+            } catch (error) {
+                console.error('Error generating verse inspiration:', error);
+                verseInspirationOutput.innerHTML = `
+                    <div class="flex items-center text-red-600">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <span>Unable to generate inspiration. Please try again.</span>
+                    </div>`;
+            }
+        });
+    </script>
+</body>
+</html>
