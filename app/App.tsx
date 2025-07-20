@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store, RootState } from './src/store';
 import { useAppDispatch, useAppSelector } from './src/hooks/redux';
-import { auth } from './src/services/firebase';
+import { auth } from './src/services/firebase/config';
 import { setUser, setInitialized } from './src/store/slices/authSlice';
 import LoadingScreen from './src/components/common/LoadingScreen';
 import RootNavigator from './src/navigation/RootNavigator';
