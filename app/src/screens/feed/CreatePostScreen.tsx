@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.accent,
+    backgroundColor: COLORS.primaryLight,
     borderRadius: 8,
     paddingVertical: 12,
     marginTop: 16,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   inspirationText: {
     fontFamily: FONTS.regular,
     fontSize: 15,
-    color: COLORS.text,
+    color: COLORS.textPrimary,
     textAlign: 'center',
     fontStyle: 'italic',
   },

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { AuthStackParamList } from '../../types';
-import { COLORS, FONTS, SIZES } from '../../constants';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants';
 
 type WelcomeScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Welcome'>;
 
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: SIZES.padding,
+    paddingHorizontal: SPACING.md,
     justifyContent: 'space-between',
   },
   header: {
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: COLORS.primary,
     paddingVertical: 16,
-    borderRadius: SIZES.radius,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: 'transparent',
     paddingVertical: 16,
-    borderRadius: SIZES.radius,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.primary,

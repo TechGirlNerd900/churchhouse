@@ -1,54 +1,67 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Post, Comment, CreatePostData, FeedState, PaginatedResponse } from '../../types';
-import { feedService } from '../../services/feed/feedService';
+import { FeedState, Post, CreatePostData, Comment, FeedFilter } from '../../types/feed';
+import * as feedService from '../../services/feedService';
 
 const initialState: FeedState = {
   posts: [],
-  loading: false,
-  refreshing: false,
+  isLoading: false,
+  isRefreshing: false,
   hasMore: true,
+  error: null,
   lastVisible: null,
-  error: undefined,
 };
 
-// Async Thunks
-export const fetchFeed = createAsyncThunk(
-  'feed/fetchFeed',
-  async ({ refresh = false }: { refresh?: boolean } = {}, { rejectWithValue, getState }) => {
+// Async thunks
+export const createPost = createAsyncThunk(
+  'feed/createPost',
+  async ({ 
+    postData, 
+    userId, 
+    userName, 
+    userProfilePic 
+  }: { 
+    postData: CreatePostData; 
+    userId: string; 
+    userName: string; 
+    userProfilePic?: string; 
+  }, { rejectWithValue }) => {
+    try {
+      const result = await feedService.createPost(postData, userId, userName, userProfilePic);
+      if (result.success) {
+        return result.id;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchPosts = createAsyncThunk(
+  'feed/fetchPosts',
+  async ({ 
+    filter, 
+    refresh = false 
+  }: { 
+    filter: FeedFilter; 
+    refresh?: boolean; 
+  }, { getState, rejectWithValue }) => {
     try {
       const state = getState() as { feed: FeedState };
       const lastVisible = refresh ? null : state.feed.lastVisible;
       
-      const response = await feedService.getFeed(lastVisible);
-      return { ...response, refresh };
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const createPost = createAsyncThunk(
-  'feed/createPost',
-  async (postData: CreatePostData, { rejectWithValue }) => {
-    try {
-      const post = await feedService.createPost(postData);
-      return post;
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const likePost = createAsyncThunk(
-  'feed/likePost',
-  async ({ postId, isLiked }: { postId: string; isLiked: boolean }, { rejectWithValue }) => {
-    try {
-      if (isLiked) {
-        await feedService.unlikePost(postId);
+      const result = await feedService.getPosts(filter, lastVisible);
+      if (result.success) {
+        return {
+          posts: result.posts,
+          lastVisible: result.lastVisible,
+          hasMore: result.hasMore,
+          refresh,
+        };
       } else {
-        await feedService.likePost(postId);
+        throw new Error(result.error);
       }
-      return { postId, isLiked: !isLiked };
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -57,22 +70,56 @@ export const likePost = createAsyncThunk(
 
 export const sharePost = createAsyncThunk(
   'feed/sharePost',
-  async ({ postId, content }: { postId: string; content?: string }, { rejectWithValue }) => {
+  async ({ 
+    postId, 
+    userId, 
+    userName, 
+    userProfilePic, 
+    message 
+  }: { 
+    postId: string; 
+    userId: string; 
+    userName: string; 
+    userProfilePic?: string; 
+    message?: string; 
+  }, { rejectWithValue }) => {
     try {
-      const sharedPost = await feedService.sharePost(postId, content);
-      return sharedPost;
+      const result = await feedService.sharePost(postId, userId, userName, userProfilePic, message);
+      if (result.success) {
+        return result.id;
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-export const deletePost = createAsyncThunk(
-  'feed/deletePost',
-  async (postId: string, { rejectWithValue }) => {
+export const addComment = createAsyncThunk(
+  'feed/addComment',
+  async ({ 
+    postId, 
+    userId, 
+    userName, 
+    text, 
+    userProfilePic, 
+    parentCommentId 
+  }: { 
+    postId: string; 
+    userId: string; 
+    userName: string; 
+    text: string; 
+    userProfilePic?: string; 
+    parentCommentId?: string; 
+  }, { rejectWithValue }) => {
     try {
-      await feedService.deletePost(postId);
-      return postId;
+      const result = await feedService.addComment(postId, userId, userName, text, userProfilePic, parentCommentId);
+      if (result.success) {
+        return { postId, commentId: result.id };
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -83,32 +130,12 @@ export const fetchComments = createAsyncThunk(
   'feed/fetchComments',
   async (postId: string, { rejectWithValue }) => {
     try {
-      const comments = await feedService.getComments(postId);
-      return { postId, comments };
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const addComment = createAsyncThunk(
-  'feed/addComment',
-  async ({ postId, content }: { postId: string; content: string }, { rejectWithValue }) => {
-    try {
-      const comment = await feedService.addComment(postId, content);
-      return { postId, comment };
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const searchPosts = createAsyncThunk(
-  'feed/searchPosts',
-  async ({ query, hashtag }: { query?: string; hashtag?: string }, { rejectWithValue }) => {
-    try {
-      const posts = await feedService.searchPosts(query, hashtag);
-      return posts;
+      const result = await feedService.getComments(postId);
+      if (result.success) {
+        return { postId, comments: result.comments };
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -119,156 +146,80 @@ const feedSlice = createSlice({
   name: 'feed',
   initialState,
   reducers: {
-    clearFeed: (state) => {
-      state.posts = [];
-      state.hasMore = true;
-      state.lastVisible = null;
-      state.error = undefined;
-    },
     clearError: (state) => {
-      state.error = undefined;
+      state.error = null;
     },
-    updatePostInFeed: (state, action: PayloadAction<Post>) => {
-      const index = state.posts.findIndex(post => post.id === action.payload.id);
-      if (index !== -1) {
-        state.posts[index] = action.payload;
+    resetFeed: (state) => {
+      state.posts = [];
+      state.lastVisible = null;
+      state.hasMore = true;
+      state.error = null;
+    },
+    updatePostInFeed: (state, action: PayloadAction<{ postId: string; updates: Partial<Post> }>) => {
+      const { postId, updates } = action.payload;
+      const postIndex = state.posts.findIndex(post => post.id === postId);
+      if (postIndex !== -1) {
+        state.posts[postIndex] = { ...state.posts[postIndex], ...updates };
       }
-    },
-    removePostFromFeed: (state, action: PayloadAction<string>) => {
-      state.posts = state.posts.filter(post => post.id !== action.payload);
-    },
-    addPostToFeed: (state, action: PayloadAction<Post>) => {
-      state.posts.unshift(action.payload);
-    },
-    setRefreshing: (state, action: PayloadAction<boolean>) => {
-      state.refreshing = action.payload;
     },
   },
   extraReducers: (builder) => {
-    // Fetch Feed
     builder
-      .addCase(fetchFeed.pending, (state, action) => {
-        if (action.meta.arg?.refresh) {
-          state.refreshing = true;
-        } else {
-          state.loading = true;
-        }
-        state.error = undefined;
-      })
-      .addCase(fetchFeed.fulfilled, (state, action) => {
-        state.loading = false;
-        state.refreshing = false;
-        
-        if (action.payload.refresh) {
-          state.posts = action.payload.data;
-        } else {
-          state.posts = [...state.posts, ...action.payload.data];
-        }
-        
-        state.hasMore = action.payload.hasMore;
-        state.lastVisible = action.payload.nextCursor;
-        state.error = undefined;
-      })
-      .addCase(fetchFeed.rejected, (state, action) => {
-        state.loading = false;
-        state.refreshing = false;
-        state.error = action.payload as string;
-      });
-
-    // Create Post
-    builder
+      // Create Post
       .addCase(createPost.pending, (state) => {
-        state.loading = true;
-        state.error = undefined;
+        state.isLoading = true;
+        state.error = null;
       })
-      .addCase(createPost.fulfilled, (state, action) => {
-        state.loading = false;
-        state.posts.unshift(action.payload);
-        state.error = undefined;
+      .addCase(createPost.fulfilled, (state) => {
+        state.isLoading = false;
+        // Optionally refresh feed after creating post
       })
       .addCase(createPost.rejected, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.error = action.payload as string;
-      });
-
-    // Like Post
-    builder
-      .addCase(likePost.fulfilled, (state, action) => {
-        const { postId, isLiked } = action.payload;
-        const post = state.posts.find(p => p.id === postId);
-        if (post) {
-          post.isLiked = isLiked;
-          post.likesCount += isLiked ? 1 : -1;
-        }
       })
-      .addCase(likePost.rejected, (state, action) => {
-        state.error = action.payload as string;
-      });
-
-    // Share Post
-    builder
-      .addCase(sharePost.fulfilled, (state, action) => {
-        state.posts.unshift(action.payload);
+      // Fetch Posts
+      .addCase(fetchPosts.pending, (state, action) => {
+        if (action.meta.arg.refresh) {
+          state.isRefreshing = true;
+        } else {
+          state.isLoading = true;
+        }
+        state.error = null;
+      })
+      .addCase(fetchPosts.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isRefreshing = false;
         
-        // Update original post share count
-        const originalPost = state.posts.find(p => p.id === action.payload.id);
-        if (originalPost) {
-          originalPost.sharesCount += 1;
+        if (action.payload.refresh) {
+          state.posts = action.payload.posts;
+        } else {
+          state.posts = [...state.posts, ...action.payload.posts];
         }
+        
+        state.lastVisible = action.payload.lastVisible;
+        state.hasMore = action.payload.hasMore;
+        state.error = null;
       })
-      .addCase(sharePost.rejected, (state, action) => {
+      .addCase(fetchPosts.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isRefreshing = false;
         state.error = action.payload as string;
-      });
-
-    // Delete Post
-    builder
-      .addCase(deletePost.fulfilled, (state, action) => {
-        state.posts = state.posts.filter(post => post.id !== action.payload);
       })
-      .addCase(deletePost.rejected, (state, action) => {
-        state.error = action.payload as string;
-      });
-
-    // Add Comment
-    builder
+      // Share Post
+      .addCase(sharePost.fulfilled, (state) => {
+        // Optionally refresh feed or show success message
+      })
+      // Add Comment
       .addCase(addComment.fulfilled, (state, action) => {
         const { postId } = action.payload;
-        const post = state.posts.find(p => p.id === postId);
-        if (post) {
-          post.commentsCount += 1;
+        const postIndex = state.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          state.posts[postIndex].commentCount += 1;
         }
-      })
-      .addCase(addComment.rejected, (state, action) => {
-        state.error = action.payload as string;
-      });
-
-    // Search Posts
-    builder
-      .addCase(searchPosts.pending, (state) => {
-        state.loading = true;
-        state.error = undefined;
-      })
-      .addCase(searchPosts.fulfilled, (state, action) => {
-        state.loading = false;
-        // For search results, we might want to handle differently
-        // For now, we'll replace the current posts
-        state.posts = action.payload;
-        state.error = undefined;
-      })
-      .addCase(searchPosts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       });
   },
 });
 
-export const {
-  clearFeed,
-  clearError,
-  updatePostInFeed,
-  removePostFromFeed,
-  addPostToFeed,
-  setRefreshing,
-} = feedSlice.actions;
-
+export const { clearError, resetFeed, updatePostInFeed } = feedSlice.actions;
 export default feedSlice.reducer;

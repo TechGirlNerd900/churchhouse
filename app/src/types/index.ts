@@ -35,6 +35,7 @@ export interface Chapel {
   hostId: string;
   hostName: string;
   isActive: boolean;
+  isLive: boolean;
   isPrivate: boolean;
   maxParticipants: number;
   currentParticipants: number;
@@ -72,12 +73,25 @@ export interface BibleVerse {
   reference: string;
 }
 
+export interface BibleTranslation {
+  id: string;
+  name: string;
+  abbreviation: string;
+  language: string;
+}
+
 export interface BibleBook {
   id: string;
   name: string;
   abbreviation: string;
   chapters: number;
   testament: 'old' | 'new';
+}
+
+export interface BibleSearchResult {
+  id: string;
+  reference: string;
+  text: string;
 }
 
 export interface Post {
@@ -122,6 +136,7 @@ export interface PrayerRequest {
   description: string;
   isAnonymous: boolean;
   isUrgent: boolean;
+  isPublic: boolean;
   category: PrayerCategory;
   prayersCount: number;
   createdAt: Date;
@@ -138,6 +153,15 @@ export type PrayerCategory =
   | 'guidance' 
   | 'thanksgiving' 
   | 'other';
+
+export interface PrayerResponse {
+  id: string;
+  prayerId: string;
+  userId: string;
+  type: 'amen' | 'prayed' | 'testimony';
+  message?: string;
+  createdAt: Date;
+}
 
 export interface Fellowship {
   id: string;

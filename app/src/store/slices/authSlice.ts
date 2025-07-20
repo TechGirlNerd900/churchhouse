@@ -1,96 +1,146 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { User, UserPreferences } from '../../types';
-import { authService } from '../../services/firebase/authService';
-
-interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  isInitialized: boolean;
-}
+import { AuthState, User, LoginCredentials, RegisterData, ProfileUpdateData } from '../../types/auth';
+import { auth, db } from '../../services/firebase/config';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  updateProfile,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
-  isInitialized: false,
 };
 
-// Async Thunks
-export const signInWithEmail = createAsyncThunk(
-  'auth/signInWithEmail',
-  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
+// Async thunks
+export const loginUser = createAsyncThunk(
+  'auth/login',
+  async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      const user = await authService.signInWithEmail(email, password);
-      return user;
+      const userCredential = await signInWithEmailAndPassword(
+        auth, 
+        credentials.email, 
+        credentials.password
+      );
+      
+      // Get user data from Firestore
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      
+      if (userDoc.exists()) {
+        return {
+          id: userCredential.user.uid,
+          ...userDoc.data(),
+          createdAt: userDoc.data().createdAt?.toDate() || new Date(),
+          lastActive: userDoc.data().lastActive?.toDate() || new Date(),
+        } as User;
+      } else {
+        throw new Error('User profile not found');
+      }
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-export const signUpWithEmail = createAsyncThunk(
-  'auth/signUpWithEmail',
-  async ({ 
-    email, 
-    password, 
-    displayName 
-  }: { 
-    email: string; 
-    password: string; 
-    displayName: string; 
-  }, { rejectWithValue }) => {
+export const registerUser = createAsyncThunk(
+  'auth/register',
+  async (userData: RegisterData, { rejectWithValue }) => {
     try {
-      const user = await authService.signUpWithEmail(email, password, displayName);
-      return user;
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        userData.email,
+        userData.password
+      );
+      
+      // Update Firebase Auth profile
+      await updateProfile(userCredential.user, {
+        displayName: userData.displayName,
+      });
+      
+      // Create user document in Firestore
+      const newUser: Omit<User, 'id'> = {
+        email: userData.email,
+        displayName: userData.displayName,
+        phoneNumber: userData.phoneNumber || '',
+        followersCount: 0,
+        followingCount: 0,
+        createdAt: new Date(),
+        lastActive: new Date(),
+        isVerified: false,
+      };
+      
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        ...newUser,
+        createdAt: serverTimestamp(),
+        lastActive: serverTimestamp(),
+      });
+      
+      return {
+        id: userCredential.user.uid,
+        ...newUser,
+      } as User;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-export const signOut = createAsyncThunk(
-  'auth/signOut',
+export const logoutUser = createAsyncThunk(
+  'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      await authService.signOut();
+      await signOut(auth);
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-export const resetPassword = createAsyncThunk(
-  'auth/resetPassword',
-  async (email: string, { rejectWithValue }) => {
-    try {
-      await authService.resetPassword(email);
-    } catch (error: any) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
-export const updateProfile = createAsyncThunk(
+export const updateUserProfile = createAsyncThunk(
   'auth/updateProfile',
-  async (updates: Partial<User>, { rejectWithValue }) => {
+  async ({ userId, data }: { userId: string; data: ProfileUpdateData }, { rejectWithValue }) => {
     try {
-      const updatedUser = await authService.updateProfile(updates);
-      return updatedUser;
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        ...data,
+        updatedAt: serverTimestamp(),
+      });
+      
+      // Update Firebase Auth profile if displayName changed
+      if (data.displayName && auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: data.displayName,
+        });
+      }
+      
+      return data;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
   }
 );
 
-export const updatePreferences = createAsyncThunk(
-  'auth/updatePreferences',
-  async (preferences: Partial<UserPreferences>, { rejectWithValue }) => {
+export const getCurrentUser = createAsyncThunk(
+  'auth/getCurrentUser',
+  async (userId: string, { rejectWithValue }) => {
     try {
-      const updatedUser = await authService.updatePreferences(preferences);
-      return updatedUser;
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      
+      if (userDoc.exists()) {
+        return {
+          id: userId,
+          ...userDoc.data(),
+          createdAt: userDoc.data().createdAt?.toDate() || new Date(),
+          lastActive: userDoc.data().lastActive?.toDate() || new Date(),
+        } as User;
+      } else {
+        throw new Error('User not found');
+      }
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -101,120 +151,67 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<User | null>) => {
-      state.user = action.payload;
-      state.isAuthenticated = !!action.payload;
-      state.isInitialized = true;
-    },
     clearError: (state) => {
       state.error = null;
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
-    },
-    setInitialized: (state, action: PayloadAction<boolean>) => {
-      state.isInitialized = action.payload;
+    setUser: (state, action: PayloadAction<User | null>) => {
+      state.user = action.payload;
+      state.isAuthenticated = !!action.payload;
     },
   },
   extraReducers: (builder) => {
-    // Sign In
     builder
-      .addCase(signInWithEmail.pending, (state) => {
+      // Login
+      .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(signInWithEmail.fulfilled, (state, action) => {
+      .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
         state.error = null;
       })
-      .addCase(signInWithEmail.rejected, (state, action) => {
+      .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-      });
-
-    // Sign Up
-    builder
-      .addCase(signUpWithEmail.pending, (state) => {
+        state.isAuthenticated = false;
+      })
+      // Register
+      .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(signUpWithEmail.fulfilled, (state, action) => {
+      .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
         state.error = null;
       })
-      .addCase(signUpWithEmail.rejected, (state, action) => {
+      .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-      });
-
-    // Sign Out
-    builder
-      .addCase(signOut.pending, (state) => {
-        state.isLoading = true;
+        state.isAuthenticated = false;
       })
-      .addCase(signOut.fulfilled, (state) => {
-        state.isLoading = false;
+      // Logout
+      .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.isAuthenticated = false;
         state.error = null;
       })
-      .addCase(signOut.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
-
-    // Reset Password
-    builder
-      .addCase(resetPassword.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+      // Update Profile
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        if (state.user) {
+          state.user = { ...state.user, ...action.payload };
+        }
       })
-      .addCase(resetPassword.fulfilled, (state) => {
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(resetPassword.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
-
-    // Update Profile
-    builder
-      .addCase(updateProfile.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(updateProfile.fulfilled, (state, action) => {
-        state.isLoading = false;
+      // Get Current User
+      .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
-        state.error = null;
-      })
-      .addCase(updateProfile.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
-
-    // Update Preferences
-    builder
-      .addCase(updatePreferences.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(updatePreferences.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload;
-        state.error = null;
-      })
-      .addCase(updatePreferences.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
+        state.isAuthenticated = true;
       });
   },
 });
 
-export const { setUser, clearError, setLoading, setInitialized } = authSlice.actions;
+export const { clearError, setUser } = authSlice.actions;
 export default authSlice.reducer;
